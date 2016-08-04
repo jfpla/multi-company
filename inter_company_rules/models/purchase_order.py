@@ -101,6 +101,15 @@ class PurchaseOrder(models.Model):
                                                    'invoice',
                                                    'delivery',
                                                    'contact'])
+
+        warehouse = (company.warehouse_id and
+                     company.warehouse_id.company_id.id == company.id and
+                     company.warehouse_id or False)
+        if not warehouse:
+            raise UserError(_(
+                'Configure correct warehouse for company(%s) from '
+                'Menu: Settings/companies/companies' % (company.name)))
+
         return {
             'name': (
                 self.env['ir.sequence'].sudo().next_by_code('sale.order') or
@@ -118,7 +127,8 @@ class PurchaseOrder(models.Model):
             'auto_generated': True,
             'auto_purchase_order_id': self.id,
             'partner_shipping_id': (direct_delivery_address or
-                                    partner_addr['delivery'])
+                                    partner_addr['delivery']),
+            'warehouse_id': warehouse.id
         }
 
     @api.model
