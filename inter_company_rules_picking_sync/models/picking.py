@@ -38,21 +38,21 @@ class stock_transfer_details(models.TransientModel):
                         % po.name)
                 elif len(po.picking_ids) == 1:
                     other_picking = po.picking_ids[0]
-                    other_user_id = other_picking.create_uid.id
+                    other_user = other_picking.company_id.intercompany_user_id
                     other_picking = picking_model.sudo(
-                        other_user_id
+                        other_user.id
                     ).browse(other_picking.id)
                     wizard_id = other_picking.do_enter_transfer_details()[
                         'res_id']
                     wizard = self.env['stock.transfer_details'].sudo(
-                        other_user_id).browse(wizard_id)
+                        other_user.id).browse(wizard_id)
                     wizard.item_ids.unlink()
                     line_model = self.env['stock.transfer_details_items']
                     sourceloc_id = other_picking.move_lines[0].location_id.id
                     destinationloc_id = other_picking.move_lines[
                         0].location_dest_id.id
                     for line in self.item_ids:
-                        line_model.sudo(other_user_id).create({
+                        line_model.sudo(other_user.id).create({
                             'transfer_id': wizard_id,
                             'product_id': line.product_id.id,
                             'product_uom_id': line.product_uom_id.id,
