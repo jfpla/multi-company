@@ -38,21 +38,21 @@ class stock_transfer_details(models.TransientModel):
                         % po.name)
                 elif len(po.picking_ids) == 1:
                     other_picking = po.picking_ids[0]
-                    other_user = other_picking.company_id.intercompany_user_id
+                    other_user_id = other_picking.company_id.intercompany_user_id.id
                     other_picking = picking_model.sudo(
-                        other_user.id
+                        other_user_id
                     ).browse(other_picking.id)
                     wizard_id = other_picking.do_enter_transfer_details()[
                         'res_id']
                     wizard = self.env['stock.transfer_details'].sudo(
-                        other_user.id).browse(wizard_id)
+                        other_user_id).browse(wizard_id)
                     wizard.item_ids.unlink()
                     line_model = self.env['stock.transfer_details_items']
                     sourceloc_id = other_picking.move_lines[0].location_id.id
                     destinationloc_id = other_picking.move_lines[
                         0].location_dest_id.id
                     for line in self.item_ids:
-                        line_model.sudo(other_user.id).create({
+                        line_model.sudo(other_user_id).create({
                             'transfer_id': wizard_id,
                             'product_id': line.product_id.id,
                             'product_uom_id': line.product_uom_id.id,
@@ -62,4 +62,32 @@ class stock_transfer_details(models.TransientModel):
                             'destinationloc_id': destinationloc_id,
                         })
                     wizard.do_detailed_transfer()
+        else:
+            po = picking.move_lines.mapped('purchase_line_id.order_id')
+            if po and len(po) == 1:
+                other_sale = self.env['sale.order'].sudo().search(
+                    [('auto_purchase_order_id', '=', po.id)])
+                if other_sale:
+                    if len(other_sale.picking_ids) == 1:
+                        if other_sale.picking_ids.state != 'done':
+                            raise UserError(
+                                _("You Have to Wait until the other company "
+                                  "Authorise this delivery"))
+                    else:
+                        raise UserError(
+                            _("There are too many pickings related to the "
+                              "other company sale order %s" % other_sale.name))
+                else:
+                    if po.auto_sale_order_id:
+                        if len(po.auto_sale_order_id.picking_ids) == 1:
+                            if po.auto_sale_order_id.picking_ids.state != 'done':
+                                raise UserError(
+                                    _("You Have to Wait until the other company"
+                                      " Authorise this delivery"))
+                        else:
+                            raise UserError(
+                                _("There are too many pickings related to the "
+                                  "other company sale order %s"
+                                  % po.auto_sale_order_id.name))
+
         return res
