@@ -9,7 +9,7 @@ Synchronize inter company pickings
 Use case: company A sells and deliveries goods to company B
 (or to a customer of company B: drop shipping is supported).
 When company A transfers the delivery order, the corresponding picking of company B is automatically processed too.
-Partial deliveries are supported.
+WIP: Partial deliveries are supported.
 
 Usage
 =====
