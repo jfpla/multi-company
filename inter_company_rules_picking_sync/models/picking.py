@@ -64,9 +64,10 @@ class stock_transfer_details(models.TransientModel):
                     wizard.do_detailed_transfer()
         else:
             po = picking.move_lines.mapped('purchase_line_id.order_id')
-            if po and len(po) == 1:
+            if len(po) == 1:
                 other_sale = self.env['sale.order'].sudo().search(
-                    [('auto_purchase_order_id', '=', po.id)])
+                    [('auto_purchase_order_id', '=', po.id)]) \
+                             or po.auto_sale_order_id
                 if other_sale:
                     if len(other_sale.picking_ids) == 1:
                         if other_sale.picking_ids.state != 'done':
@@ -77,17 +78,5 @@ class stock_transfer_details(models.TransientModel):
                         raise UserError(
                             _("There are too many pickings related to the "
                               "other company sale order %s" % other_sale.name))
-                else:
-                    if po.auto_sale_order_id:
-                        if len(po.auto_sale_order_id.picking_ids) == 1:
-                            if po.auto_sale_order_id.picking_ids.state != 'done':
-                                raise UserError(
-                                    _("You Have to Wait until the other company"
-                                      " Authorise this delivery"))
-                        else:
-                            raise UserError(
-                                _("There are too many pickings related to the "
-                                  "other company sale order %s"
-                                  % po.auto_sale_order_id.name))
 
         return res
