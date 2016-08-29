@@ -9,12 +9,12 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class stock_transfer_details(models.TransientModel):
+class StockTransferDetails(models.TransientModel):
     _inherit = 'stock.transfer_details'
 
     @api.one
     def do_detailed_transfer(self):
-        res = super(stock_transfer_details, self).do_detailed_transfer()
+        res = super(StockTransferDetails, self).do_detailed_transfer()
         picking_model = self.env['stock.picking']
         # reading as admin to read other company's data
         picking = picking_model.sudo().browse(self.picking_id.id)
