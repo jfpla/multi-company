@@ -9,12 +9,12 @@ import logging
 _logger = logging.getLogger(__name__)
 
 
-class stock_transfer_details(models.TransientModel):
+class StockTransferDetails(models.TransientModel):
     _inherit = 'stock.transfer_details'
 
     @api.one
     def do_detailed_transfer(self):
-        res = super(stock_transfer_details, self).do_detailed_transfer()
+        res = super(StockTransferDetails, self).do_detailed_transfer()
         picking_model = self.env['stock.picking']
         # reading as admin to read other company's data
         picking = picking_model.sudo().browse(self.picking_id.id)
@@ -38,7 +38,12 @@ class stock_transfer_details(models.TransientModel):
                         % po.name)
                 elif len(po.picking_ids) == 1:
                     other_picking = po.picking_ids[0]
-                    other_user_id = other_picking.company_id.intercompany_user_id.id
+                    if not other_picking.company_id.intercompany_user_id:
+                        raise UserError(_(
+                            "Please set an Inter Company User for company %s"
+                            % other_picking.company_id.name))
+                    other_user_id = (
+                        other_picking.company_id.intercompany_user_id.id)
                     other_picking = picking_model.sudo(
                         other_user_id
                     ).browse(other_picking.id)
